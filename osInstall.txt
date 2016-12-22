@@ -1,0 +1,132 @@
+# total ram required: min:RAM=3G,  if no swap space
+# VM =  2CPU, 3GRAM, 32G HD
+
+# debian : ADD `whoami` to /etc/group
+addgroup `whoami` sudo
+
+apt-get update
+apt-get upgrade
+apt-get dist-upgrade
+
+apt-get -y install sudo lrzsz htop dstat mc doublecmd-gtk gparted synaptic automake bsdmainutils build-essential autoconf libtool pkg-config libcanberra-gtk-dev gdb
+
+#for VirtualBoxPlugins
+apt-get install linux-headers-amd64
+
+# push your virtual CD into Virtual Machine
+# root , 
+# cd /mount/cdrom; sh VBoxLinux*.run
+
+# Oracle JDK/JVM
+# for debian 8.6 , using this version: xenial
+
+echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee /etc/apt/sources.list.d/webupd8team-java.list
+echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+apt-get update
+apt-get install oracle-java8-installer
+
+#check java version
+javac -version
+java -version
+
+# Virtual box
+echo "deb http://download.virtualbox.org/virtualbox/debian jessie contrib" | tee /etc/apt/sources.list.d/VirtualBox.list
+wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
+wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | apt-key add -
+apt-get update
+apt-get install virtualbox-5.1
+
+
+#config user group can do, ...
+sudo addgroup `whoami` sudo
+sudo addgroup `whoami` vboxusers
+sudo addgroup `whoami` vboxsf
+
+# Bitcoin
+apt-get -y install git libssl-dev libboost-all-dev libevent-dev libzmq3-dev libprotobuf-dev protobuf-compiler libminiupnpc-dev libqrencode-dev autotools-dev
+
+apt-get -y install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools
+
+# bitcoin
+WORKSPACE=$HOME/workspace
+mkdir -p $WORKSPACE
+cd $WORKSPACE
+PROJECT=$HOME/workspace
+git clone https://github.com/bitcoin/bitcoin.git
+
+
+cd $WORKSPACE
+wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+
+# compare File Hash 
+echo '12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef db-4.8.30.NC.tar.gz' | sha256sum -c
+
+# compile DB4, and install the source code
+tar -xvf db-4.8.30.NC.tar.gz
+cd db-4.8.30.NC/build_unix
+BDB_PREFIX=$(pwd -P)/build
+mkdir -p ${BDB_PREFIX}
+../dist/configure -disable-shared -enable-cxx -with-pic -prefix=$BDB_PREFIX
+make install
+cd ../..
+
+cd bitcoin
+# current version v.13.1, or master
+git checkout v0.13.1
+./autogen.sh
+#be sure BDB_PREFIX is defined ( in copmile DB4 session)
+# option: is "-O3", oh-2
+# debug: "-g -O0"
+OPTIMA_FLAG=-O3
+./configure CPPFLAGS="-I${BDB_PREFIX}/include/ ${OPTIMA_FLAG}" LDFLAGS="-L${BDB_PREFIX}/lib/" -with-gui
+
+echo CPPFLAGS=\"-I${BDB_PREFIX}/include/ ${OPTIMA_FLAG}\" LDFLAGS=\"-L${BDB_PREFIX}/lib/\" -with-gui
+
+make
+make install
+
+
+
+
+
+
+# work with ECLIPSE IDE
+cd
+mkdir eclipse
+cd eclipse
+wget http://eclipse.stu.edu.tw/oomph/epp/neon/R1/eclipse-inst-linux64.tar.gz
+tar -zxvf eclipse-inst-linux64.tar.gz
+# install CDT
+
+# start cdt, with bitcoin project....
+# import project with autotool options; C++, existing code with autotools
+# wized, change to c++ project
+
+
+# change config , for using DB4 lib
+# project -->  properties --> autotools -> configure settings --> advanced
+# additional command-line options = 
+
+CFLAGS="-g" CXXFLAGS="-g" CPPFLAGS='-I/home/chengc/workspace/db-4.8.30.NC/build_unix/build/include/ -ggdb3 -O0' CXXFLAGS='-ggdb3 -O0' LDFLAGS='-L/home/chengc/workspace/db-4.8.30.NC/build_unix/build/lib/  -ggdb3' -with-gui
+
+==> build
+view config processing and result: switch console view:  console ==> autotool
+view compile processing: switch console view: console ==> global build
+
+:
+
+
+./configure CPPFLAGS="-I${BDB_PREFIX}/include/ -O3" LDFLAGS="-L${BDB_PREFIX}/lib/" -with-gui --enable-experimental --enable-endomorphism --enable-module-ecdh --enable-jni
+
+git clone https://github.com/bitcoin/secp256k1
+cd secp256k1
+./autogen.sh
+./configure --help
+./configure --enable-jni --enable-experimental --enable-module-schnorr --enable-module-ecdh
+make
+
+git clone https://github.com/bitcoinj/bitcoinj.git
+
+
+
